@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@gnosis.pm/safe-apps-sdk": "^7.8.0",
+    "@metamask/detect-provider": "^1.2.0",
+    "@safe-global/safe-gateway-typescript-sdk": "^3.5.5",
     "@testing-library/jest-dom": "^5.16.5",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
@@ -10,16 +13,21 @@
     "@types/node": "^16.18.11",
     "@types/react": "^18.0.26",
     "@types/react-dom": "^18.0.10",
+    "assert": "^2.0.0",
+    "axios": "^1.2.2",
+    "ethers": "^5.7.0",
+    "lodash": "^4.17.21",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-router-dom": "^6.6.1",
     "react-scripts": "5.0.1",
-    "typescript": "^4.9.4",
-    "web-vitals": "^2.1.4"
+    "react-toastify": "^9.1.1",
+    "typescript": "^4.9.4"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
+    "start": "react-app-rewired start",
+    "build": "react-app-rewired build",
+    "test": "react-app-rewired test",
     "eject": "react-scripts eject"
   },
   "eslintConfig": {
@@ -27,6 +35,22 @@
       "react-app",
       "react-app/jest"
     ]
+  },
+  "devDependencies": {
+    "@safe-global/safe-core-sdk": "^3.2.2",
+    "@safe-global/safe-core-sdk-types": "^1.8.0",
+    "@safe-global/safe-ethers-lib": "^1.8.0",
+    "@types/lodash": "^4.14.191",
+    "buffer": "^6.0.3",
+    "crypto-browserify": "^3.12.0",
+    "https-browserify": "^1.0.0",
+    "os-browserify": "^0.3.0",
+    "process": "^0.11.10",
+    "react-app-rewired": "^2.2.1",
+    "stream-browserify": "^3.0.0",
+    "stream-http": "^3.2.0",
+    "tailwindcss": "^3.2.4",
+    "url": "^0.11.0"
   },
   "browserslist": {
     "production": [
