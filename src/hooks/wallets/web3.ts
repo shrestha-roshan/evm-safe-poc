@@ -1,8 +1,8 @@
 import { RPC_AUTHENTICATION, type ChainInfo, type RpcUri } from '@safe-global/safe-gateway-typescript-sdk'
-import { INFURA_TOKEN, SAFE_APPS_INFURA_TOKEN } from '@/config/constants'
 import { type EIP1193Provider } from '@web3-onboard/core'
 import { JsonRpcProvider, Web3Provider } from '@ethersproject/providers'
-import ExternalStore from '@/services/ExternalStore'
+import ExternalStore from '../../services/ExternalStore'
+import { INFURA_TOKEN, SAFE_APPS_INFURA_TOKEN } from '../../config/constants'
 
 // RPC helpers
 const formatRpcServiceUrl = ({ authentication, value }: RpcUri, TOKEN: string): string => {

@@ -7,6 +7,7 @@ import { EthereumProviderProvider } from './context/EthreumContextProvider';
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
 );
+
 root.render(
   <React.StrictMode>
     <EthereumProviderProvider>

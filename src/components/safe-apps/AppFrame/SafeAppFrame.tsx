@@ -31,6 +31,8 @@ const SafeAppIframe = ({
       onLoad={onLoad}
       sandbox={IFRAME_SANDBOX_ALLOWED_FEATURES}
       allow={allowedFeaturesList}
+      height="660px"
+      width="100%"
     />
   );
 };
