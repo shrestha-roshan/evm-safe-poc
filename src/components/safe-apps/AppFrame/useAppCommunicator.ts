@@ -29,10 +29,9 @@ import type {
   SafeBalances,
 } from "@gnosis.pm/safe-apps-sdk";
 import { Methods } from "@gnosis.pm/safe-apps-sdk";
-import { createSafeAppsWeb3Provider } from "@/hooks/wallets/web3";
-import type { SafePermissionsRequest } from "@/hooks/safe-apps/permissions";
-import { SAFE_APPS_EVENTS, trackSafeAppEvent } from "@/services/analytics";
 import AppCommunicator from "../../../services/safe-apps/AppCommunicator";
+import { SafePermissionsRequest } from "../../../hooks/safe-apps/permissions";
+import { createSafeAppsWeb3Provider } from "../../../hooks/wallets/web3";
 
 export enum CommunicatorMessages {
   REJECT_TRANSACTION_MESSAGE = "Transaction was rejected",
@@ -92,17 +91,7 @@ const useAppCommunicator = (
     ) => {
       communicatorInstance = new AppCommunicator(iframeRef, {
         onMessage: (msg) => {
-          const isCustomApp = app && app.id < 1;
-
-          trackSafeAppEvent(
-            { ...SAFE_APPS_EVENTS.SAFE_APP_SDK_METHOD_CALL },
-            isCustomApp ? app?.url : app?.name || "",
-            {
-              method: msg.data.method,
-              ethMethod: (msg.data.params as any)?.call,
-              version: msg.data.env.sdkVersion,
-            }
-          );
+          // console.log("msg", msg)
         },
         onError: (error, data) => {
           console.log(error.message, {
