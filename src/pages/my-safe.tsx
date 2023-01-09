@@ -10,6 +10,8 @@ import { useBrowserPermissions } from "../hooks/safe-apps/permissions";
 export const MySafe = () => {
   const { id } = useParams();
   const { ethAdapter, walletConnected } = useEthereumProvider();
+  const [safeSdk, setSafeSdk] = useState<Safe | null>(null);
+
   const [safeData, setSafeData] = useState({
     safeAddress: "",
     owners: [""],
@@ -37,6 +39,7 @@ export const MySafe = () => {
         console.log("here");
         const safe = await Safe.create({ ethAdapter, safeAddress: id });
         const safeSdk = await safe.connect({ ethAdapter, safeAddress: id });
+        setSafeSdk(safeSdk);
         const owners = await safeSdk.getOwners();
         const nonce = await safeSdk.getNonce();
         const threshold = await safeSdk.getThreshold();
@@ -55,15 +58,30 @@ export const MySafe = () => {
     }
     SetData();
   }, [id, walletConnected]);
+
   console.log("safeAdd:", safeData.safeAddress);
-  const { getAllowedFeaturesList } = useBrowserPermissions()
+  const { getAllowedFeaturesList } = useBrowserPermissions();
 
   return (
     <div className="px-3 md:lg:xl:px-40   border-t border-b py-20 bg-opacity-10">
       <div className="text-[24px] font-semibold">{safeData.safeAddress}</div>
       <div className="grid grid-cols-1 md:lg:xl:grid-cols-3 group bg-white shadow-xl shadow-neutral-100 border ">
         <div className="p-10 flex flex-col items-center text-center group md:lg:xl:border-r md:lg:xl:border-b hover:bg-slate-50 cursor-pointer">
-          <button className="px-5 py-3  mb-12 mt-8 font-medium text-slate-700 shadow-xl  hover:bg-white duration-150  bg-yellow-400">
+          <button
+            className="px-5 py-3  mb-12 mt-8 font-medium text-slate-700 shadow-xl  hover:bg-white duration-150  bg-yellow-400"
+            onClick={async () => {
+              if(!safeSdk) return;
+              const owner = prompt(
+                "Enter the address of the owner to be added"
+              );
+              if(!owner) return;
+              const tx = await safeSdk?.createAddOwnerTx({
+                ownerAddress: (owner || "").toString(),
+              });
+              const receipt = await safeSdk?.executeTransaction(tx);
+              console.log(receipt);
+            }}
+          >
             {" "}
             Add Owners{" "}
           </button>
@@ -157,11 +175,15 @@ export const MySafe = () => {
             height="660px"
             width="100%"
             /> */}
-      {walletConnected && <AppFrame
-        allowedFeaturesList={getAllowedFeaturesList("https://app.uniswap.org")}
-        appUrl="https://app.uniswap.org/#/swap?outputCurrency=0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359"
-        key={safeData.safeAddress}
-      />}
+      {walletConnected && (
+        <AppFrame
+          allowedFeaturesList={getAllowedFeaturesList(
+            "https://app.uniswap.org"
+          )}
+          appUrl="https://app.uniswap.org/#/swap?outputCurrency=0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359"
+          key={safeData.safeAddress}
+        />
+      )}
     </div>
   );
 };
