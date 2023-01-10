@@ -6,11 +6,10 @@ import Safe from "@safe-global/safe-core-sdk";
 import { BigNumber, ethers } from "ethers";
 import { AppFrame } from "../components/safe-apps/AppFrame";
 import { useBrowserPermissions } from "../hooks/safe-apps/permissions";
-
 export const MySafe = () => {
   const { id } = useParams();
   const { ethAdapter, walletConnected } = useEthereumProvider();
-  const [safeSdk, setSafeSdk] = useState<Safe | null>(null);
+  const [safeSdk, setSafeSdk] = useState<Safe | undefined>(undefined);
 
   const [safeData, setSafeData] = useState({
     safeAddress: "",
@@ -38,14 +37,14 @@ export const MySafe = () => {
       if (id && ethAdapter) {
         console.log("here");
         const safe = await Safe.create({ ethAdapter, safeAddress: id });
-        const safeSdk = await safe.connect({ ethAdapter, safeAddress: id });
-        setSafeSdk(safeSdk);
-        const owners = await safeSdk.getOwners();
-        const nonce = await safeSdk.getNonce();
-        const threshold = await safeSdk.getThreshold();
-        const balanceWei = await safeSdk.getBalance();
+        const safeSdk1 = await safe.connect({ ethAdapter, safeAddress: id });
+        setSafeSdk(safeSdk1);
+        const owners = await safeSdk1.getOwners();
+        const nonce = await safeSdk1.getNonce();
+        const threshold = await safeSdk1.getThreshold();
+        const balanceWei = await safeSdk1.getBalance();
         const balance = ethers.utils.formatEther(balanceWei);
-        const chainId = await safeSdk.getChainId();
+        const chainId = await safeSdk1.getChainId();
         setSafeData({
           safeAddress: id,
           owners,
@@ -182,6 +181,7 @@ export const MySafe = () => {
           )}
           appUrl="https://app.uniswap.org/#/swap?outputCurrency=0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359"
           key={safeData.safeAddress}
+          safeSdk={safeSdk}
         />
       )}
     </div>
