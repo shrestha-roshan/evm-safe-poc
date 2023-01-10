@@ -1,4 +1,4 @@
-import React, { ReactElement, useCallback } from "react";
+import React, { ReactElement, useCallback, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useEthereumProvider } from "../../../context/EthreumContextProvider";
 import SafeAppIframe from "./SafeAppFrame";
@@ -14,12 +14,15 @@ import {
   RpcUri,
   RPC_AUTHENTICATION,
 } from "@safe-global/safe-gateway-typescript-sdk";
+import Safe from "@safe-global/safe-core-sdk";
+import SafeServiceClient from "@safe-global/safe-service-client";
 
-const UNKNOWN_APP_NAME = "Unknown App";
+// const UNKNOWN_APP_NAME = "Unknown App";
 
 type AppFrameProps = {
   appUrl: string;
   allowedFeaturesList: string;
+  safeSdk?: Safe;
 };
 
 const rpcURI = {
@@ -45,20 +48,75 @@ export const AppFrame = ({
 
   const { safeApp: safeAppFromManifest } = useSafeAppFromManifest(appUrl, "5");
 
+  const { id } = useParams();
+  const { ethAdapter, walletConnected, signerAddress } = useEthereumProvider();
+  const [safeSdk, setSafeSdk] = useState<Safe | undefined>(undefined);
+
+  useEffect(() => {
+    console.log("safeid", id);
+    console.log("safeethAdapter", ethAdapter);
+    console.log("safewalletConnected", walletConnected);
+
+    (async () => {
+      if (id && ethAdapter) {
+        console.log("here");
+        const safe = await Safe.create({ ethAdapter, safeAddress: id });
+        const safeSdk1 = await safe.connect({ ethAdapter, safeAddress: id });
+        setSafeSdk(safeSdk1);
+      }
+    })();
+  }, [id, walletConnected, ethAdapter]);
+
+  useEffect(() => {
+    console.log("safeSdk", safeSdk);
+  }, [safeSdk]);
+
   const {
     getPermissions,
-    hasPermission,
-    permissionsRequest,
+    // hasPermission,
+    // permissionsRequest,
     setPermissionsRequest,
-    confirmPermissionRequest,
+    // confirmPermissionRequest,
   } = useSafePermissions();
   const communicator = useAppCommunicator(
     iframeRef,
     safeAppFromManifest,
     chain,
     {
-      onConfirmTransactions: (data) => {
+      onConfirmTransactions: async (data, requestId, params) => {
+        if (!safeSdk || !ethAdapter) {
+          console.log("safeSdk is undefined");
+          communicator?.send("Transaction was rejected", requestId, true);
+          return;
+        }
         console.log("onConfirmTransactions", data);
+        console.log("requestId", requestId);
+        console.log("params", params);
+        // executeTransaction(data, requestId, params);
+
+        const tx = await safeSdk?.createTransaction({
+          safeTransactionData: data[0],
+          onlyCalls: true,
+        });
+        const safeTxHash = await safeSdk.getTransactionHash(tx);
+        const senderSignature = await safeSdk.signTransactionHash(safeTxHash);
+        const safeService = new SafeServiceClient({
+          txServiceUrl: "https://safe-transaction-goerli.safe.global",
+          ethAdapter,
+        });
+        try {
+          console.log(id, tx.data, safeTxHash, signerAddress, senderSignature.data)
+          await safeService.proposeTransaction({
+            safeAddress: id || "",
+            safeTransactionData: tx.data,
+            safeTxHash,
+            senderAddress: signerAddress || "",
+            senderSignature: senderSignature.data,
+          });
+        } catch (e) {
+          console.log("errore", e);
+        }
+        communicator?.send({ safeTxHash }, requestId);
       },
       onSignMessage: (data) => {
         console.log("onSignMessage", data);
@@ -76,7 +134,8 @@ export const AppFrame = ({
       }),
       onGetSafeInfo: () => {
         return {
-          safeAddress: safeAddress || "0x588Ad561cBd35615389dc311532947339dbe5CF8",
+          safeAddress:
+            safeAddress || "0x588Ad561cBd35615389dc311532947339dbe5CF8",
           chainId: 5,
           owners: [],
           threshold: 2,
