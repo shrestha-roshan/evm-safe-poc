@@ -4,11 +4,14 @@ import { ethers, BigNumber, utils } from "ethers";
 import Safe from "@safe-global/safe-core-sdk";
 import { SafeTransactionDataPartial } from "@safe-global/safe-core-sdk-types";
 import SafeServiceClient from "@safe-global/safe-service-client";
+import { toast } from "react-toastify";
 
 export const SafeOverview: React.FC<{
   safeData: any;
   safeSdk: Safe | undefined;
 }> = ({ safeData, safeSdk }) => {
+
+  const [ownerToRemove, setOwnerToRemove] = React.useState<string>("");
   const {
     ethAdapter,
     walletConnected,
@@ -18,6 +21,7 @@ export const SafeOverview: React.FC<{
     signer,
   } = useEthereumProvider();
   const handleTransfer = async () => {
+    if (!safeSdk) return;
     const sendTo = prompt("Address to send?")?.toString();
     const value = prompt("How much?")?.toString();
     const tx: SafeTransactionDataPartial = {
@@ -32,22 +36,26 @@ export const SafeOverview: React.FC<{
     if (transferTx) {
       const txnHash = await safeSdk?.getTransactionHash(transferTx);
       if (!txnHash || !ethAdapter) return;
-      const sig = await safeSdk?.signTransactionHash(txnHash);
-      const safeService = new SafeServiceClient({
-        txServiceUrl: "https://safe-transaction-goerli.safe.global",
-        ethAdapter,
-      });
-      try {
-        if (!sig) throw Error("Sig not found");
-        await safeService.proposeTransaction({
-          safeAddress: safeData.safeAddress || "",
-          safeTransactionData: transferTx.data,
-          safeTxHash: txnHash,
-          senderAddress: signerAddress || "",
-          senderSignature: sig.data,
+      if (safeData.threshold === 1) {
+        await safeSdk.executeTransaction(transferTx);
+      } else {
+        const sig = await safeSdk?.signTransactionHash(txnHash);
+        const safeService = new SafeServiceClient({
+          txServiceUrl: "https://safe-transaction-goerli.safe.global",
+          ethAdapter,
         });
-      } catch (e) {
-        console.log("errore", e);
+        try {
+          if (!sig) throw Error("Sig not found");
+          await safeService.proposeTransaction({
+            safeAddress: safeData.safeAddress || "",
+            safeTransactionData: transferTx.data,
+            safeTxHash: txnHash,
+            senderAddress: signerAddress || "",
+            senderSignature: sig.data,
+          });
+        } catch (e) {
+          console.log("errore", e);
+        }
       }
     }
   };
@@ -57,8 +65,8 @@ export const SafeOverview: React.FC<{
       <div className="text-[24px] font-semibold mb-10">
         {safeData.safeAddress}
       </div>
-      <div className="grid grid-cols-1 md:lg:xl:grid-cols-3 group bg-white shadow-xl shadow-neutral-100 border ">
-        <div className="p-10 flex flex-col items-center text-center group md:lg:xl:border-r md:lg:xl:border-b hover:bg-slate-50 cursor-pointer">
+      <div className="rounded-lg grid grid-cols-1 md:lg:xl:grid-cols-3 group bg-white shadow-xl shadow-neutral-100 border ">
+        <div className="p-10 flex flex-col items-center text-center group md:lg:xl:border-r hover:bg-slate-50">
           <span className="p-5 rounded-full bg-red-500 text-white shadow-lg shadow-red-200">
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -75,16 +83,32 @@ export const SafeOverview: React.FC<{
               />
             </svg>
           </span>
-          <p className="text-xl font-medium text-slate-700 mt-3">Owners</p>
-          <ul className="mt-2 mb-10 text-lg text-slate-500">
-            {safeData?.owners?.map((owner: any) => (
-              <li key={owner}>
-                {!!owner && owner !== "" && trimWalletAddress(owner)}
-              </li>
-            ))}
-          </ul>
+          <p className="text-xl font-medium text-slate-700 mt-3">
+            Owners ({safeData?.owners?.length ?? "0"})
+          </p>
+          <div className="max-h-[85px] min-h-[80px] overflow-auto px-4">
+            <ul className="mt-2 text-lg text-slate-500">
+              {safeData?.owners?.map((owner: any) => (
+                <li
+                  className={` ${ownerToRemove === owner ? "bg-red-200": ""} cursor-pointer hover:bg-red-100`}
+                  key={owner}
+                  onClick={() => {
+                    if(ownerToRemove === owner) {
+                      setOwnerToRemove("");
+                      return;
+                    }
+                    navigator.clipboard.writeText(owner || "");
+                    toast.success("Copied and Selected");
+                    setOwnerToRemove(owner || "");
+                  }}
+                >
+                  {!!owner && owner !== "" && trimWalletAddress(owner)}
+                </li>
+              ))}
+            </ul>
+          </div>
           <button
-            className="px-5 py-3  mb-12 mt-8 font-medium text-slate-700 shadow-xl  hover:bg-white duration-150  bg-yellow-400"
+            className="px-5 py-3  mb-7 mt-12 font-medium text-slate-700 shadow-xl  hover:bg-white duration-150  bg-yellow-400"
             onClick={async () => {
               if (!safeSdk || !ethAdapter) return;
               const owner = prompt(
@@ -135,9 +159,62 @@ export const SafeOverview: React.FC<{
             {" "}
             Add Owners{" "}
           </button>
+          {ownerToRemove !== "" && (<>
+          
+          <button
+            className="px-5 py-3 disabled:bg-slate-600  mb-12 font-medium text-slate-700 shadow-xl  hover:bg-white duration-150  bg-yellow-400"
+            disabled={ownerToRemove === ""}
+            onClick={async () => {
+              if (!safeSdk || !ethAdapter) return;
+              const owner = ownerToRemove.trim().toString();
+              if (!owner) return;
+
+              const threshold = prompt("Enter the threshold number of signers");
+
+              if (!threshold) return;
+
+              if (Number(threshold) > safeData.owners.length + 1) {
+                alert("Threshold must be less than total number of owners");
+                return;
+              }
+              const tx = await safeSdk?.createRemoveOwnerTx({
+                ownerAddress: (owner || "").toString(),
+                threshold: Number(threshold),
+              });
+              if (safeData.threshold === 1) {
+                const receipt = await safeSdk?.executeTransaction(tx);
+                console.log(receipt);
+              } else {
+                if (tx) {
+                  const txnHash = await safeSdk?.getTransactionHash(tx);
+                  if (!txnHash || !ethAdapter) return;
+                  const sig = await safeSdk?.signTransactionHash(txnHash);
+                  const safeService = new SafeServiceClient({
+                    txServiceUrl: "https://safe-transaction-goerli.safe.global",
+                    ethAdapter,
+                  });
+                  try {
+                    if (!sig) throw Error("Sig not found");
+                    await safeService.proposeTransaction({
+                      safeAddress: safeData.safeAddress || "",
+                      safeTransactionData: tx.data,
+                      safeTxHash: txnHash,
+                      senderAddress: signerAddress || "",
+                      senderSignature: sig.data,
+                    });
+                  } catch (e) {
+                    console.log("errore", e);
+                  }
+                }
+              }
+            }}
+          >
+            {" "}
+            Remove Owner{" "}
+          </button></>)}
         </div>
 
-        <div className="p-10 flex flex-col items-center text-center group md:lg:xl:border-r md:lg:xl:border-b hover:bg-slate-50 cursor-pointer">
+        <div className="p-10 flex flex-col items-center text-center group md:lg:xl:border-r hover:bg-slate-50">
           <span className="p-5 rounded-full bg-orange-500 text-white shadow-lg shadow-orange-200">
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -157,16 +234,57 @@ export const SafeOverview: React.FC<{
           <p className="text-xl font-medium text-slate-700 mt-3">
             Signature Threshold
           </p>
-          <p className="mt-3 mb-20 text-xl text-slate-500">
+          <p className="mt-3 min-h-[80px] overflow-auto text-xl text-slate-500">
             {safeData.threshold}
           </p>
-          <button className="px-5 py-3 mb-12 mt-8 font-medium text-slate-700 shadow-xl  hover:bg-white duration-150  bg-yellow-400">
+          <button
+            className="px-5 py-3 mb-12 mt-8 font-medium text-slate-700 shadow-xl  hover:bg-white duration-150  bg-yellow-400 "
+            onClick={async () => {
+              if (!safeSdk || !ethAdapter) return;
+              const threshold = prompt("Enter threshold to be updated");
+              if (!threshold) return;
+
+              if (Number(threshold) > safeData.owners.length + 1) {
+                alert("Threshold must be less than total number of owners");
+                return;
+              }
+              const tx = await safeSdk?.createChangeThresholdTx(
+                Number(threshold)
+              );
+              if (safeData.threshold === 1) {
+                const receipt = await safeSdk?.executeTransaction(tx);
+                console.log(receipt);
+              } else {
+                if (tx) {
+                  const txnHash = await safeSdk?.getTransactionHash(tx);
+                  if (!txnHash || !ethAdapter) return;
+                  const sig = await safeSdk?.signTransactionHash(txnHash);
+                  const safeService = new SafeServiceClient({
+                    txServiceUrl: "https://safe-transaction-goerli.safe.global",
+                    ethAdapter,
+                  });
+                  try {
+                    if (!sig) throw Error("Sig not found");
+                    await safeService.proposeTransaction({
+                      safeAddress: safeData.safeAddress || "",
+                      safeTransactionData: tx.data,
+                      safeTxHash: txnHash,
+                      senderAddress: signerAddress || "",
+                      senderSignature: sig.data,
+                    });
+                  } catch (e) {
+                    console.log("errore", e);
+                  }
+                }
+              }
+            }}
+          >
             {" "}
             Change Threshold{" "}
           </button>
         </div>
 
-        <div className="p-10 flex flex-col items-center text-center group   md:lg:xl:border-b hover:bg-slate-50 cursor-pointer">
+        <div className="p-10 flex flex-col items-center text-center group hover:bg-slate-50">
           <span className="p-5 rounded-full bg-yellow-500 text-white shadow-lg shadow-yellow-200">
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -186,8 +304,8 @@ export const SafeOverview: React.FC<{
           <p className="text-xl font-medium text-slate-700 mt-3">
             Native Balance
           </p>
-          <p className="mt-3 mb-6 text-xl text-slate-500">
-            {safeData.balance.toString()}
+          <p className="mt-3  min-h-[80px] overflow-auto text-xl text-slate-500">
+            {Number(safeData.balance).toFixed(5)}
           </p>
           <button
             onClick={handleTransfer}
