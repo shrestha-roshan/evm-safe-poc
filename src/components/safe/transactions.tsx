@@ -39,7 +39,7 @@ export const SafeTransactions: React.FC<{
   return (
     <div>
       <div>
-        <div className="flex gap-2 items-center mb-10">
+        <div className="flex gap-2 items-center mb-10  bg-[#1b3a66] text-white rounded">
           {[
             {
               key: "pending",
@@ -53,8 +53,8 @@ export const SafeTransactions: React.FC<{
             <div
               key={each.key}
               className={`px-4 ${
-                each.key === transactionType ? "bg-yellow-400" : ""
-              } py-3 border-2 border-slate-500 text-medium cursor-pointer rounded-lg`}
+                each.key === transactionType ? "bg-button" : ""
+              } py-2 text-medium cursor-pointer rounded-lg`}
               onClick={() => {
                 setType(each.key as "pending" | "all");
               }}

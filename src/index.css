@@ -1,3 +1,27 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+
+
+.bg-button, button {
+    @apply bg-gradient-to-tr from-[#0078d4] to-[#1b3a66] !text-white;
+}
+
+.bg-button:hover, button:hover {
+    @apply bg-gradient-to-tr from-[#1b3a66] to-[#0078d4] !text-white;
+}
+
+button {
+    @apply rounded-lg;
+}
+
+a {
+    @apply justify-center flex items-center;
+}
+a:hover {
+    @apply bg-gradient-to-tr from-[#1b3a66] to-[#0078d4] !text-white;
+}
+a.active {
+    @apply bg-gradient-to-tr from-[#0078d4] to-[#1b3a66] !text-white;
+}

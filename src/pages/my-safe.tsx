@@ -84,8 +84,8 @@ export const MySafe = () => {
   const { getAllowedFeaturesList } = useBrowserPermissions();
 
   return (
-    <div className="px-3 md:lg:xl:px-40   border-t border-b py-20 bg-opacity-10">
-      <div className="flex gap-2 items-center mb-10">
+    <div className="px-3 md:lg:xl:px-40 py-20 bg-opacity-10">
+      <div className="flex gap-2 items-center mb-10 bg-[#1b3a66] text-white rounded">
       {[
         {
           key: 'overview',
@@ -101,7 +101,7 @@ export const MySafe = () => {
         }
       ].map(each=><div 
         key={each.key}
-        className={`px-4 ${each.key=== currentTab ? 'bg-yellow-400': ''} py-3 border-2 border-slate-500 text-medium cursor-pointer rounded-lg`}
+        className={`px-4 ${each.key=== currentTab ? 'bg-button': ''} py-3 text-medium cursor-pointer rounded-lg`}
         onClick={()=>{
           setCurrentTab(each.key)
           each.key === 'transactions' && setTransactionType("pending")

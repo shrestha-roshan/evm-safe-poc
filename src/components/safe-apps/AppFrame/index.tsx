@@ -92,20 +92,27 @@ export const AppFrame = ({
         console.log("onConfirmTransactions", data);
         console.log("requestId", requestId);
         console.log("params", params);
-        // executeTransaction(data, requestId, params);
 
         const tx = await safeSdk?.createTransaction({
           safeTransactionData: data[0],
           onlyCalls: true,
         });
         const safeTxHash = await safeSdk.getTransactionHash(tx);
-        const senderSignature = await safeSdk.signTransactionHash(safeTxHash);
-        const safeService = new SafeServiceClient({
-          txServiceUrl: "https://safe-transaction-goerli.safe.global",
-          ethAdapter,
-        });
-        try {
-          console.log(id, tx.data, safeTxHash, signerAddress, senderSignature.data)
+        if ((await safeSdk.getThreshold()) === 1) {
+          await safeSdk.executeTransaction(tx);
+        } else {
+          const senderSignature = await safeSdk.signTransactionHash(safeTxHash);
+          const safeService = new SafeServiceClient({
+            txServiceUrl: "https://safe-transaction-goerli.safe.global",
+            ethAdapter,
+          });
+          console.log(
+            id,
+            tx.data,
+            safeTxHash,
+            signerAddress,
+            senderSignature.data
+          );
           await safeService.proposeTransaction({
             safeAddress: id || "",
             safeTransactionData: tx.data,
@@ -113,8 +120,6 @@ export const AppFrame = ({
             senderAddress: signerAddress || "",
             senderSignature: senderSignature.data,
           });
-        } catch (e) {
-          console.log("errore", e);
         }
         communicator?.send({ safeTxHash }, requestId);
       },
@@ -180,6 +185,9 @@ export const AppFrame = ({
 
   return (
     <div>
+      {appIsLoading && <div className="text-sm w-full h-[200px] flex items-center justify-center">
+        Loading...
+      </div>}
       <div
         style={{
           height: "100%",
@@ -193,6 +201,7 @@ export const AppFrame = ({
           iframeRef={iframeRef}
           onLoad={onIframeLoad}
           title={safeAppFromManifest?.name}
+          className="mt-4"
         />
       </div>
     </div>

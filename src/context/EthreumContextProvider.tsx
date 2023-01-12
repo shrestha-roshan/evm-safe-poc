@@ -3,6 +3,7 @@ import React, {
     useContext,
     useMemo,
     useState,
+    useEffect
   } from 'react';
   
   import {
@@ -188,6 +189,8 @@ import React, {
         ethAdapter
       ]
     );
+    useEffect(()=>connect(),[])
+
     return (
       <EthereumProviderContext.Provider value={contextValue}>
         {children}

@@ -12,7 +12,6 @@ import { SafeContextProvider } from './context/SafeContext';
 
 function App() {
   return (
-  
     <BrowserRouter>
       <Navbar />
       <ToastContainer/>
