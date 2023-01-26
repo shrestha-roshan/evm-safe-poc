@@ -3,6 +3,7 @@ import moment from "moment";
 import Safe from "@safe-global/safe-core-sdk";
 import SafeServiceClient from "@safe-global/safe-service-client";
 import { useEthereumProvider } from "../..//context/EthreumContextProvider";
+import { simulateTxn } from "../../utils/simulateTxn";
 
 export const SafeTransactions: React.FC<{
   pendingTransactions: any;
@@ -23,8 +24,11 @@ export const SafeTransactions: React.FC<{
     await safeService?.confirmTransaction(hash, signature.data);
 
     const safeTransaction = await safeService.getTransaction(hash);
-    if(!safeTransaction.confirmations) return;
-    if( safeData.threshold > safeTransaction.confirmations.length) return;
+    const safeAdd = await safeSdk?.getAddress();
+    if (!safeTransaction.confirmations) return;
+    if (!safeTransaction || !safeAdd) return;
+    if (safeData.threshold > safeTransaction.confirmations.length) return;
+    await simulateTxn(safeAdd, safeTransaction.to, safeTransaction.data || "", safeTransaction.value);
 
     const executeTxResponse = await safeSdk?.executeTransaction(
       safeTransaction
@@ -52,9 +56,8 @@ export const SafeTransactions: React.FC<{
           ].map((each) => (
             <div
               key={each.key}
-              className={`px-4 ${
-                each.key === transactionType ? "bg-button" : ""
-              } py-2 text-medium cursor-pointer rounded-lg`}
+              className={`px-4 ${each.key === transactionType ? "bg-button" : ""
+                } py-2 text-medium cursor-pointer rounded-lg`}
               onClick={() => {
                 setType(each.key as "pending" | "all");
               }}
@@ -93,14 +96,14 @@ export const SafeTransactions: React.FC<{
               {(!pendingTransactions ||
                 (!!pendingTransactions &&
                   pendingTransactions?.length === 0)) && (
-                <tr className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
-                  <td colSpan={5}>
-                    <div className="flex w-full my-10 justify-center">
-                      No transactions found
-                    </div>
-                  </td>
-                </tr>
-              )}
+                  <tr className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+                    <td colSpan={5}>
+                      <div className="flex w-full my-10 justify-center">
+                        No transactions found
+                      </div>
+                    </td>
+                  </tr>
+                )}
               {pendingTransactions?.map((data: any) => (
                 <tr className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
                   <th

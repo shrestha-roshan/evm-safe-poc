@@ -14,8 +14,9 @@ import {
   RpcUri,
   RPC_AUTHENTICATION,
 } from "@safe-global/safe-gateway-typescript-sdk";
-import Safe from "@safe-global/safe-core-sdk";
+import Safe, { ContractNetworksConfig } from "@safe-global/safe-core-sdk";
 import SafeServiceClient from "@safe-global/safe-service-client";
+import { simulateTxn } from "../../../utils/simulateTxn";
 
 // const UNKNOWN_APP_NAME = "Unknown App";
 
@@ -60,8 +61,19 @@ export const AppFrame = ({
     (async () => {
       if (id && ethAdapter) {
         console.log("here");
-        const safe = await Safe.create({ ethAdapter, safeAddress: id });
-        const safeSdk1 = await safe.connect({ ethAdapter, safeAddress: id });
+        const networks: ContractNetworksConfig = {
+          "97": {
+            safeMasterCopyAddress: "0xA6f2e94bD3EF99528E946e818d4d4E884dF3D5Fc",
+            safeProxyFactoryAddress: "0x246f42884273405D13EC0b24c5803212EA3016C8",
+            createCallAddress: "0x7cbB62EaA69F79e6873cD1ecB2392971036cFAa4",
+            fallbackHandlerAddress: "0xf48f2B2d2a534e402487b3ee7C18c33Aec0Fe5e4",
+            multiSendAddress: "0xA238CBeb142c10Ef7Ad8442C6D1f9E89e07e7761",
+            multiSendCallOnlyAddress: "0x40A2aCCbd92BCA938b02010E17A5b8929b49130D",
+            signMessageLibAddress: "0xA65387F16B013cf2Af4605Ad8aA5ec25a2cbA3a2"
+          }
+        };
+        const safe = await Safe.create({ ethAdapter, safeAddress: id, contractNetworks: networks });
+        const safeSdk1 = await safe.connect({ ethAdapter, safeAddress: id, contractNetworks: networks });
         setSafeSdk(safeSdk1);
       }
     })();
@@ -97,13 +109,15 @@ export const AppFrame = ({
           safeTransactionData: data[0],
           onlyCalls: true,
         });
+        const safeAdd = await safeSdk.getAddress();
         const safeTxHash = await safeSdk.getTransactionHash(tx);
         if ((await safeSdk.getThreshold()) === 1) {
+          await simulateTxn(safeAdd, tx.data.to, tx.data.data || "", tx.data.value);
           await safeSdk.executeTransaction(tx);
         } else {
           const senderSignature = await safeSdk.signTransactionHash(safeTxHash);
           const safeService = new SafeServiceClient({
-            txServiceUrl: "https://safe-transaction-goerli.safe.global",
+            txServiceUrl: "http://18.218.241.2",
             ethAdapter,
           });
           console.log(

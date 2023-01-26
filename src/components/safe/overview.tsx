@@ -5,6 +5,8 @@ import Safe from "@safe-global/safe-core-sdk";
 import { SafeTransactionDataPartial } from "@safe-global/safe-core-sdk-types";
 import SafeServiceClient from "@safe-global/safe-service-client";
 import { toast } from "react-toastify";
+import { simulateTxn } from "../../utils/simulateTxn";
+import { values } from "lodash";
 
 export const SafeOverview: React.FC<{
   safeData: any;
@@ -24,6 +26,7 @@ export const SafeOverview: React.FC<{
     if (!safeSdk) return;
     const sendTo = prompt("Address to send?")?.toString();
     const value = prompt("How much?")?.toString();
+    const safeAdd = await safeSdk.getAddress();
     const tx: SafeTransactionDataPartial = {
       to: sendTo || "",
       value: utils.parseUnits((value || "").toString()).toString(),
@@ -37,6 +40,12 @@ export const SafeOverview: React.FC<{
       const txnHash = await safeSdk?.getTransactionHash(transferTx);
       if (!txnHash || !ethAdapter) return;
       if (safeData.threshold === 1) {
+        const simulateTxResponse = await safeSdk?.isValidTransaction(transferTx);
+
+        await simulateTxn(safeAdd, transferTx.data.to, transferTx.data.data || "", transferTx.data.value);
+
+        if (!simulateTxResponse) { console.error("Simulation Failed"); return };
+
         await safeSdk.executeTransaction(transferTx);
       } else {
         const sig = await safeSdk?.signTransactionHash(txnHash);
@@ -90,10 +99,10 @@ export const SafeOverview: React.FC<{
             <ul className="mt-2 text-lg text-slate-500">
               {safeData?.owners?.map((owner: any) => (
                 <li
-                  className={` ${ownerToRemove === owner ? "bg-red-200": ""} cursor-pointer hover:bg-red-100`}
+                  className={` ${ownerToRemove === owner ? "bg-red-200" : ""} cursor-pointer hover:bg-red-100`}
                   key={owner}
                   onClick={() => {
-                    if(ownerToRemove === owner) {
+                    if (ownerToRemove === owner) {
                       setOwnerToRemove("");
                       return;
                     }
@@ -129,6 +138,8 @@ export const SafeOverview: React.FC<{
                 threshold: Number(threshold),
               });
               if (safeData.threshold === 1) {
+                const safeAdd = await safeSdk.getAddress();
+                await simulateTxn(safeAdd, tx.data.to, tx.data.data, tx.data.value);
                 const receipt = await safeSdk?.executeTransaction(tx);
                 console.log(receipt);
               } else {
@@ -160,58 +171,60 @@ export const SafeOverview: React.FC<{
             Add Owners{" "}
           </button>
           {ownerToRemove !== "" && (<>
-          
-          <button
-            className="px-5 py-3 disabled:bg-slate-600  mb-12 font-medium text-slate-700 shadow-xl  hover:bg-white duration-150  bg-yellow-400"
-            disabled={ownerToRemove === ""}
-            onClick={async () => {
-              if (!safeSdk || !ethAdapter) return;
-              const owner = ownerToRemove.trim().toString();
-              if (!owner) return;
 
-              const threshold = prompt("Enter the threshold number of signers");
+            <button
+              className="px-5 py-3 disabled:bg-slate-600  mb-12 font-medium text-slate-700 shadow-xl  hover:bg-white duration-150  bg-yellow-400"
+              disabled={ownerToRemove === ""}
+              onClick={async () => {
+                if (!safeSdk || !ethAdapter) return;
+                const owner = ownerToRemove.trim().toString();
+                if (!owner) return;
 
-              if (!threshold) return;
+                const threshold = prompt("Enter the threshold number of signers");
 
-              if (Number(threshold) > safeData.owners.length + 1) {
-                alert("Threshold must be less than total number of owners");
-                return;
-              }
-              const tx = await safeSdk?.createRemoveOwnerTx({
-                ownerAddress: (owner || "").toString(),
-                threshold: Number(threshold),
-              });
-              if (safeData.threshold === 1) {
-                const receipt = await safeSdk?.executeTransaction(tx);
-                console.log(receipt);
-              } else {
-                if (tx) {
-                  const txnHash = await safeSdk?.getTransactionHash(tx);
-                  if (!txnHash || !ethAdapter) return;
-                  const sig = await safeSdk?.signTransactionHash(txnHash);
-                  const safeService = new SafeServiceClient({
-                    txServiceUrl: "https://safe-transaction-goerli.safe.global",
-                    ethAdapter,
-                  });
-                  try {
-                    if (!sig) throw Error("Sig not found");
-                    await safeService.proposeTransaction({
-                      safeAddress: safeData.safeAddress || "",
-                      safeTransactionData: tx.data,
-                      safeTxHash: txnHash,
-                      senderAddress: signerAddress || "",
-                      senderSignature: sig.data,
+                if (!threshold) return;
+
+                if (Number(threshold) > safeData.owners.length + 1) {
+                  alert("Threshold must be less than total number of owners");
+                  return;
+                }
+                const tx = await safeSdk?.createRemoveOwnerTx({
+                  ownerAddress: (owner || "").toString(),
+                  threshold: Number(threshold),
+                });
+                if (safeData.threshold === 1) {
+                  const safeAdd = await safeSdk.getAddress();
+                  await simulateTxn(safeAdd, tx.data.to, tx.data.data, tx.data.value);
+                  const receipt = await safeSdk?.executeTransaction(tx);
+                  console.log(receipt);
+                } else {
+                  if (tx) {
+                    const txnHash = await safeSdk?.getTransactionHash(tx);
+                    if (!txnHash || !ethAdapter) return;
+                    const sig = await safeSdk?.signTransactionHash(txnHash);
+                    const safeService = new SafeServiceClient({
+                      txServiceUrl: "https://safe-transaction-goerli.safe.global",
+                      ethAdapter,
                     });
-                  } catch (e) {
-                    console.log("errore", e);
+                    try {
+                      if (!sig) throw Error("Sig not found");
+                      await safeService.proposeTransaction({
+                        safeAddress: safeData.safeAddress || "",
+                        safeTransactionData: tx.data,
+                        safeTxHash: txnHash,
+                        senderAddress: signerAddress || "",
+                        senderSignature: sig.data,
+                      });
+                    } catch (e) {
+                      console.log("errore", e);
+                    }
                   }
                 }
-              }
-            }}
-          >
-            {" "}
-            Remove Owner{" "}
-          </button></>)}
+              }}
+            >
+              {" "}
+              Remove Owner{" "}
+            </button></>)}
         </div>
 
         <div className="p-10 flex flex-col items-center text-center group md:lg:xl:border-r hover:bg-slate-50">
