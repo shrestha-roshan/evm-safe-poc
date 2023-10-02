@@ -8,6 +8,7 @@ import SafeServiceClient from "@safe-global/safe-service-client";
 import { SafeMultisigTransactionResponse } from "@safe-global/safe-core-sdk-types";
 import moment from "moment"
 import { SafeOverview, SafeTransactions } from "../components";
+import { ethers } from "ethers";
 
 export const MySafe = () => {
   const { id } = useParams();
@@ -69,7 +70,7 @@ export const MySafe = () => {
     if (!ethAdapter || !id) return;
     (async () => {
       const safeService = new SafeServiceClient({
-        txServiceUrl: "https://safe-transaction-goerli.safe.global",
+        txServiceUrl: "https://safe-service.dev.bnb.zebec.io",
         ethAdapter,
       });
       console.log("ddd", id)
@@ -116,9 +117,9 @@ export const MySafe = () => {
         {walletConnected && (
           <AppFrame
             allowedFeaturesList={getAllowedFeaturesList(
-              "https://app.uniswap.org"
+              "https://pancakeswap.finance/",
             )}
-            appUrl="https://app.uniswap.org/#/swap?outputCurrency=0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359"
+            appUrl="https://pancakeswap.finance/"
             key={safeData.safeAddress}
             safeSdk={safeSdk}
           />

@@ -1,6 +1,6 @@
 import axios, { AxiosRequestConfig } from "axios"
 const api = axios.create({
-  baseURL: "https://safe-client.safe.global/v1",
+  baseURL: "https://safe-service.dev.bnb.zebec.io/api/v1/",
   headers: {
     Accept: "application/json",
     "Content-Type": "application/json; charset=utf-8"
@@ -9,7 +9,7 @@ const api = axios.create({
 
 
 export const getSafes = async (ownerAddress: string, chainId = 5) => {
-    const { data } = await  api.get(`/chains/${chainId}/owners/${ownerAddress}/safes`)
+    const { data } = await  api.get(`/owners/${ownerAddress}/safes`)
     return data;    
 }
 

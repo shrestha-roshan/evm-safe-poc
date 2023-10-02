@@ -1,12 +1,11 @@
 import React from "react";
 import { useEthereumProvider } from "../../context/EthreumContextProvider";
-import { ethers, BigNumber, utils } from "ethers";
+import { utils } from "ethers";
 import Safe from "@safe-global/safe-core-sdk";
 import { SafeTransactionDataPartial } from "@safe-global/safe-core-sdk-types";
 import SafeServiceClient from "@safe-global/safe-service-client";
 import { toast } from "react-toastify";
 import { simulateTxn } from "../../utils/simulateTxn";
-import { values } from "lodash";
 
 export const SafeOverview: React.FC<{
   safeData: any;
@@ -50,7 +49,7 @@ export const SafeOverview: React.FC<{
       } else {
         const sig = await safeSdk?.signTransactionHash(txnHash);
         const safeService = new SafeServiceClient({
-          txServiceUrl: "https://safe-transaction-goerli.safe.global",
+          txServiceUrl: "https://safe-service.dev.bnb.zebec.io",
           ethAdapter,
         });
         try {
@@ -148,7 +147,7 @@ export const SafeOverview: React.FC<{
                   if (!txnHash || !ethAdapter) return;
                   const sig = await safeSdk?.signTransactionHash(txnHash);
                   const safeService = new SafeServiceClient({
-                    txServiceUrl: "https://safe-transaction-goerli.safe.global",
+                    txServiceUrl: "https://safe-service.dev.bnb.zebec.io",
                     ethAdapter,
                   });
                   try {
@@ -203,7 +202,7 @@ export const SafeOverview: React.FC<{
                     if (!txnHash || !ethAdapter) return;
                     const sig = await safeSdk?.signTransactionHash(txnHash);
                     const safeService = new SafeServiceClient({
-                      txServiceUrl: "https://safe-transaction-goerli.safe.global",
+                      txServiceUrl: "https://safe-service.dev.bnb.zebec.io",
                       ethAdapter,
                     });
                     try {
@@ -273,7 +272,7 @@ export const SafeOverview: React.FC<{
                   if (!txnHash || !ethAdapter) return;
                   const sig = await safeSdk?.signTransactionHash(txnHash);
                   const safeService = new SafeServiceClient({
-                    txServiceUrl: "https://safe-transaction-goerli.safe.global",
+                    txServiceUrl: "https://safe-service.dev.bnb.zebec.io",
                     ethAdapter,
                   });
                   try {
