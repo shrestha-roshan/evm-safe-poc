@@ -3,8 +3,6 @@ import { toast } from "react-toastify"
 import { useEthereumProvider } from '../context/EthreumContextProvider'
 import { ContractNetworksConfig, SafeAccountConfig, SafeDeploymentConfig, SafeFactory } from '@safe-global/safe-core-sdk'
 import 'react-toastify/dist/ReactToastify.css';
-import { BigNumber, providers } from 'ethers';
-import Safe from '@safe-global/safe-core-sdk'
 import { useNavigate } from "react-router-dom";
 
 export const CreateSafe = () => {

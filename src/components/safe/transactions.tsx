@@ -18,7 +18,7 @@ export const SafeTransactions: React.FC<{
     let signature = await safeSdk?.signTransactionHash(hash);
     if (!signature || !ethAdapter) return;
     const safeService = new SafeServiceClient({
-      txServiceUrl: "https://safe-transaction-goerli.safe.global",
+      txServiceUrl: "https://safe-service.dev.bnb.zebec.io",
       ethAdapter,
     });
     await safeService?.confirmTransaction(hash, signature.data);
